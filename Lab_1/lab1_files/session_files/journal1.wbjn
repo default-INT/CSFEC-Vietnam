@@ -1,0 +1,43 @@
+# encoding: utf-8
+# Release 19.2
+SetScriptVersion(Version="19.2.120")
+template1 = GetTemplate(
+    TemplateName="Steady-State Thermal",
+    Solver="ANSYS")
+system1 = template1.CreateSystem()
+geometry1 = system1.GetContainer(ComponentName="Geometry")
+geometry1.Edit(IsSpaceClaimGeometry=True)
+geometry1.SetFile(FilePath="D:/Other/GSTU/semester_5/CSFEC-Vietnam/Lab_1/model.scdoc")
+modelComponent1 = system1.GetComponent(Name="Model")
+modelComponent1.Refresh()
+model1 = system1.GetContainer(ComponentName="Model")
+model1.Edit()
+engineeringData1 = system1.GetContainer(ComponentName="Engineering Data")
+matl1 = engineeringData1.CreateMaterial(Name="getinak")
+matl1.DisplayName = "getinax"
+matl1.DisplayName = "Ge"
+matl1.Delete()
+matl2 = engineeringData1.CreateMaterial(Name="Cooper")
+matl2.Delete()
+matl3 = engineeringData1.CreateMaterial(Name="brass")
+matl3.DisplayName = "Brass"
+matl3.Delete()
+favorites1 = EngData.LoadFavoriteItems()
+library1 = EngData.OpenLibrary(
+    Name="Magnetic B-H Curves",
+    Source="Magnetic_B-H_curves_Soft_Materials.xml")
+library2 = EngData.OpenLibrary(
+    Name="Thermal Materials",
+    Source="Thermal_Materials.xml")
+matl4 = engineeringData1.ImportMaterial(
+    Name="Brass",
+    Source="Thermal_Materials.xml")
+EngData.EnableFilter(Enable=False)
+EngData.EnableFilter()
+matl5 = engineeringData1.ImportMaterial(
+    Name="FR-4 Epoxy",
+    Source="Thermal_Materials.xml")
+results1 = system1.GetContainer(ComponentName="Results")
+results1.Edit()
+model1.Exit()
+Save(Overwrite=True)
