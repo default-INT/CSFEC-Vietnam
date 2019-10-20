@@ -1,4 +1,4 @@
-import numpy
+#import numpy
 import math
 
 class ThermalConductivity():
@@ -37,12 +37,10 @@ class ThermalConductivity():
         T[self.N-1] =T_right
         time = 0
         while time <= self.t:
-            #print(tau)
             time += tau 
-
-            TT = self.remember_last_T(T)
+            TT = T
             for i in range(1, self.N - 1):
-                T[i] = TT[i] + a * tau / math.sqrt(h) * (TT[i+1] - 2 * TT[i] + TT[i-1])
+                T[i] = TT[i] + a * tau / (h ** 2) * (TT[i+1] - 2 * TT[i] + TT[i-1])
                     
         return T
     
