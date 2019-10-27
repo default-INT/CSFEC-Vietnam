@@ -33,16 +33,16 @@ class GUI(tk.Frame):
         self.length_input.grid(row = 1, column = 1, padx = 5, pady = 5)
 
         #input t_left
-        t_left_lable = tk.Label(root, text="Введите температуру на левом крае:", bg = self.back_color,
+        self.t_left_lable = tk.Label(root, text="Введите температуру на левом крае:", bg = self.back_color,
                                 fg = self.text_color, font = self.font)
-        t_left_lable.grid(row = 2, column = 0, padx = 5, pady = 5)
+        self.t_left_lable.grid(row = 2, column = 0, padx = 5, pady = 5)
         self.t_left_input = tk.Entry(root, width = self.width_entry, bg = 'white', font = self.font, fg = self.text_color)
         self.t_left_input.grid(row = 2, column = 1, padx = 5, pady = 5)
 
         #input t_right
-        t_right_lable = tk.Label(root, text="Введите температуру на правом крае:", bg = self.back_color,
+        self.t_right_lable = tk.Label(root, text="Введите температуру на правом крае:", bg = self.back_color,
                                 fg = self.text_color, font = self.font)
-        t_right_lable.grid(row = 3, column = 0, padx = 5, pady = 5)
+        self.t_right_lable.grid(row = 3, column = 0, padx = 5, pady = 5)
         self.t_right_input = tk.Entry(root, width = self.width_entry, font = self.font, bg = 'white', fg = self.text_color)
         self.t_right_input.grid(row = 3, column = 1, padx = 5, pady = 5)
 
@@ -75,11 +75,28 @@ class GUI(tk.Frame):
         self.material_combo['values'] = ('Гетинакс', 'Олово')
         self.material_combo.grid(row = 7, column = 1, padx = 5, pady = 5)
 
-        fdm_cal_button = tk.Button(root, text = 'Вычислить по МКР', font = self.font, activebackground = self.active_color,
-                                command = lambda: self.fdm_cal(), bg = 'green', fg = 'white',
-                                activeforeground = self.active_color_text, bd=0, compound = tk.TOP)
-        fdm_cal_button.grid(row = 8, column = 0, ipadx = 50, ipady=10 , padx = 5, pady = 5)
+        self.method = tk.IntVar()
+
+        self.fdm_checkbutton = tk.Radiobutton(text="МКР", value=1, bg = self.back_color, variable=self.method, command=lambda: self.change_text(1),
+                                         fg = self.text_color, font = self.font)
+        self.fdm_checkbutton.grid(row=8, column=0, padx = 5, pady = 5)
         
+        self.fem_checkbutton = tk.Radiobutton(text="Метод конечных элементов", bg = self.back_color, fg = self.text_color, command=lambda: self.change_text(2),
+                                         font = self.font, value=2, variable=self.method)
+        self.fem_checkbutton.grid(row=8, column=1, padx = 5, pady = 5)
+
+        fdm_cal_button = tk.Button(root, text = 'Вычислить', font = self.font, activebackground = self.active_color,
+                                command = lambda: self.calculate(), bg = 'green', fg = 'white',
+                                activeforeground = self.active_color_text, bd=0, compound = tk.TOP)
+        fdm_cal_button.grid(row = 9, column = 0, ipadx = 50, ipady=10 , padx = 5, pady = 5)
+        
+    def change_text(self, select):
+        if (select == 1):
+            self.t_left_lable['text'] = "Введите температуру на левом крае:"
+            self.t_right_lable['text'] = "Введите температуру на правом крае:"
+        else:
+            self.t_left_lable['text'] = "Введите тепловой поток:"
+            self.t_right_lable['text']= "Введите конвекцию:"
 
     def choice_material(self, material):
         if  material == 'Гетинакс':
@@ -88,6 +105,12 @@ class GUI(tk.Frame):
             return 8930, 385
         else:
             return 7800, 460
+
+    def calculate(self):
+        if self.method.get() == 1:
+            self.fdm_cal()
+        else:
+            self.fem_cal()
 
     def fdm_cal(self):
         try:
@@ -109,6 +132,26 @@ class GUI(tk.Frame):
         except:
             messagebox.showerror('Ошибка','Были некорректно  введены значения.')
         #self.exit()
+
+    def fem_cal(self):
+        
+        L = float(self.length_input.get())
+        q = int(self.t_left_input.get())
+        conv = int(self.t_right_input.get())
+        T0 = int(self.start_t_input.get())
+        time = int(self.time_input.get())
+        N = int(self.count_N_input.get())
+        ro, c = self.choice_material(self.material_combo.get())
+        
+        thermal_conductivity = tc.ThermalConductivity(L=L, q=q, convection=conv, t=time,
+                                    N = N, T0=T0, Ro=ro, c=c)            
+        T, x = thermal_conductivity.FEM()
+
+        fig = plt.figure()
+        plt.plot(x, T)
+        plt.show()
+       
+        #self.exit()
         
 
     def check(self):
@@ -116,7 +159,7 @@ class GUI(tk.Frame):
 
 if __name__ == "__main__":
     root=tk.Tk()
-    root.geometry('720x420+140+90')
+    root.geometry('720x430+140+90')
     root.config(bg='#e9e8ea')
     root.title('Лабараторная работа №1. Современные численные методы решения граничных задач')
     GUI(root)
