@@ -4,7 +4,7 @@ import math
 class ThermalConductivity():
     
     def __init__(self, L = 0.1, T0 = 20, T_left = 300, T_right = 100, t = 15, Ro = 7800, N = 45,
-                       lamba = 46, c = 460, q = 42, convection = 50):
+                       lamba = 46, c = 460, q = 42, convection = 50, radius = 1):
         self.L = L
         self.N = N
         self.lamba = lamba
@@ -16,6 +16,7 @@ class ThermalConductivity():
         self.t = t
         self.q = q
         self.convection = convection
+        self.radius = radius
 
     def create_T(self):
         T = list()
@@ -50,11 +51,73 @@ class ThermalConductivity():
             k+=h
         return T, L_arr
 
+    def FEM_update(self):
+        c = self.q 
+        Ro = self.Ro
+        r = self.radius               #радиус стержня
+        lamba = self.lamba            #коэфициент теплопроводности
+        conv = self.convection
+        start_T = self.T0
+        q = self.q
+        T_inf = 0                     #температура окружающей среды
+        cRo = c * Ro                  #удельная теплоёмкость * плотность
+        dt = self.t / 30
+        Len_shaft = self.L            #длина стержня
+        n_el = self.N                 #количество разбиений стержня
+        len_i = Len_shaft / n_el      #длина i го элемента == h
+        A = 0.0001                    #площадь поперечного сечения
+
+        #матрицы для каждого i-ых элементов стержня
+        c_i = (cRo * A * len_i / 6) * np.array([[2, 1],
+                                                [1, 2]], dtype='double')
+        k_i = (A * lamba) / len_i * np.array([[1, -1],
+                                              [-1, 1]], dtype='double')
+                                              
+        T = np.zeros(n_el + 1)
+        for i in range(n_el + 1):
+            T[i] = start_T
+        
+        F = np.zeros(n_el + 1)
+        F[0] = -q
+        F[1] = -q
+        F[n_el-1] = -conv
+        F[n_el] = -conv
+
+        K = np.zeros((n_el+1, n_el+1), dtype=np.float32)
+        C = np.zeros((n_el+1, n_el+1), dtype=np.float32)
+        #формируем матрицы K и C из k_i и c_i
+        for i in range(n_el):
+            K[i, i] += k_i[0, 0]
+            K[i, i+1] += k_i[0, 1]
+            K[i+1, i] += k_i[1, 0]
+            K[i+1, i+1] += k_i[1, 1]
+
+            C[i, i] += c_i[0, 0]
+            C[i, i+1] += c_i[0, 1]
+            C[i+1, i] += c_i[1, 0]
+            C[i+1, i+1] += c_i[1, 1]
+
+        B = K + 2/dt * C
+        P = 2/dt * C - K
+        time = 0
+        inv_B = np.linalg.inv(B)
+        while time < self.t:
+            T = np.linalg.solve(B, P.dot(T) - 2 * F)
+            time += dt
+
+        L_arr = list()
+        k = 0 
+        for i in T:
+            L_arr.append(k)
+            k+=len_i
+        
+        return T, L_arr
+
     def FEM(self):
-        A = math.pi
-        a = self.lamba / (self.Ro * self.c)
-        len_i = self.L / (self.N - 1) #длина i-го эл.
-        tau = len_i ** 2 / (4 * a) #шаг по времени
+        A = 0.0001 # math.pi
+        #a = self.lamba / (self.Ro * self.c)
+        len_i = self.L / self.N #длина i-го эл.
+        tau = self.t / 30 #шаг по времени
         h = 10
 
         k = 0
@@ -64,6 +127,7 @@ class ThermalConductivity():
             k+=len_i
 
         T = self.create_T()
+        T.append(self.T0)
         C_i = (self.c * self.Ro * A * len_i) / 6 * np.array([[2, 1], [1, 2]], dtype='double')
         K_i = (A * self.lamba) / len_i * np.array([[1, -1], [-1, 1]], dtype='double')
         
@@ -74,8 +138,8 @@ class ThermalConductivity():
             (self.T0 * A * self.L - self.q * A + h * self.convection * A)/2 * \
                 2 * np.array([[1], [1]], dtype='double'))
             i += len_i
-        K = np.zeros(self.N+1, self.N+1)
-        C = np.zeros(self.N+1, self.N+1)
+        K = np.zeros((self.N+1, self.N+1), dtype=np.float32)
+        C = np.zeros((self.N+1, self.N+1), dtype=np.float32)
         for i in range(self.N):
             K[i, i] += K_i[0, 0]
             K[i, i+1] += K_i[0, 1]
