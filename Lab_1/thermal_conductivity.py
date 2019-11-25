@@ -46,7 +46,8 @@ class ThermalConductivity():
                 T[i] = TT[i] + a * tau / (h ** 2) * (TT[i+1] - 2 * TT[i] + TT[i-1])
         k = 0
         L_arr = list()
-        while (k < self.L):
+        k = 0 
+        for i in T:
             L_arr.append(k)
             k+=h
         return T, L_arr
@@ -100,9 +101,9 @@ class ThermalConductivity():
         B = K + 2/dt * C
         P = 2/dt * C - K
         time = 0
-        inv_B = np.linalg.inv(B)
+        #inv_B = np.linalg.inv(B)
         while time < self.t:
-            T = np.linalg.solve(B, P.dot(T) - 2 * F)
+            T = np.linalg.solve(B, P.dot(T) - F)
             time += dt
 
         L_arr = list()
@@ -112,115 +113,3 @@ class ThermalConductivity():
             k+=len_i
         
         return T, L_arr
-
-    def FEM(self):
-        A = 0.0001 # math.pi
-        #a = self.lamba / (self.Ro * self.c)
-        len_i = self.L / self.N #длина i-го эл.
-        tau = self.t / 30 #шаг по времени
-        h = 10
-
-        k = 0
-        L_arr = list()
-        while (k < self.L):
-            L_arr.append(k)
-            k+=len_i
-
-        T = self.create_T()
-        T.append(self.T0)
-        C_i = (self.c * self.Ro * A * len_i) / 6 * np.array([[2, 1], [1, 2]], dtype='double')
-        K_i = (A * self.lamba) / len_i * np.array([[1, -1], [-1, 1]], dtype='double')
-        
-        f = list()
-        i = 0
-        while i < self.L: #L not int !!!!!!! 
-            f.append(-
-            (self.T0 * A * self.L - self.q * A + h * self.convection * A)/2 * \
-                2 * np.array([[1], [1]], dtype='double'))
-            i += len_i
-        K = np.zeros((self.N+1, self.N+1), dtype=np.float32)
-        C = np.zeros((self.N+1, self.N+1), dtype=np.float32)
-        for i in range(self.N):
-            K[i, i] += K_i[0, 0]
-            K[i, i+1] += K_i[0, 1]
-            K[i+1, i] += K_i[1, 0]
-
-            C[i, i] += C_i[0, 0]
-            C[i, i+1] += C_i[0, 1]
-            C[i+1, i] += C_i[1, 0]
-
-            if (i+1) == self.N:
-                K[i+1, i+1] += K_i[1, 1]
-                C[i+1, i+1] += C_i[1, 1]
-            else:
-                K[i+1, i+1] += (K_i[1, 1] + K_i[0, 0])
-                C[i+1, i+1] += (C_i[1, 1] + C_i[0, 0])
-        B = K + (2 / tau) * C
-        P = (2 / tau) * C - K
-
-        F = np.zeros(self.N+1)
-        F[0] = -self.q
-        F[1] = -self.q
-        F[self.N - 1] = - self.convection
-        F[self.N] = - self.convection
-        time = 0
-
-        while time < self.t:
-            T = np.linalg.solve(B, P*T - 2 * F)
-            time += tau
-        return T, L_arr
-        '''
-        K = np.zeros(self.N, self.N)
-        C = np.zeros(self.N, self.N)
-        for i in range(self.N):
-            C[i, i] += C_i[0, 0]
-            C[i, i+1] += C_i[0, 1]
-            C[i+1, i] += C_i[1, 0]
-            C[i+1, i+1] += C_i[1, 1]
-
-            K[i, i] += K_i[0, 0]
-            K[i, i+1] += K_i[0, 1]
-            K[i+1, i] += K_i[1, 0]
-            K[i+1, i+1] += K_i[1, 1]
-
-        B = np.zeros(self.N, self.N + 1)
-        P = np.zeros(self.N, self.N)
-
-        for i in range(self.N):
-            for j in range(self.N):
-                B[i, j] += K[i, j] + (2 / tau) * C[i, j]
-                P[i, j] += (2 / tau) * C[i, j] - K[i, j]
-        f = np.zeros(self.N)
-        f[0] = -self.q
-        f[1] = -self.q
-        f[self.N - 2] = - self.convection
-        f[self.N - 1] = - self.convection
-
-        countTime = int(self.t / tau)
-        prevTemp = np.zeros(self.N)
-        prevTemp += self.T0
-        temp = np.zeros(countTime, self.N)
-        temp[0, :] = prevTemp
-        for i in range(1, countTime):
-            d1 = P * prevTemp
-            d2 = f * 2
-            d3 = d1 - d2
-
-            matrix = B
-            matrix[:, self.N] = d3
-        '''
-
-'''    
-L = 0.1
-lamba = 46
-Ro = 7800
-c = 460
-T0 = 20
-T_left = 300
-T_right = 100
-t = 60
-
-thermCond = ThermalConductivity(L, lamba, Ro, c, T0, T_left, T_right, t)
-arr = thermCond.FDM()
-print(arr)
-'''

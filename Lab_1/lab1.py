@@ -110,17 +110,6 @@ class GUI(tk.Frame):
                                 command = lambda: self.calculate(), bg = 'green', fg = 'white',
                                 activeforeground = self.active_color_text, bd=0, compound = tk.TOP)
         fdm_cal_button.grid(row = 12, column = 0, ipadx = 50, ipady=10 , padx = 5, pady = 5)
-        
-    def change_text(self, select):
-        pass
-        '''
-        if (select == 1):
-            self.t_left_lable['text'] = "Введите температуру на левом крае:"
-            self.t_right_lable['text'] = "Введите температуру на правом крае:"
-        else:
-            self.t_left_lable['text'] = "Введите тепловой поток:"
-            self.t_right_lable['text']= "Введите конвекцию:"
-        '''
 
     def choice_material(self, material):
         if  material == 'Гетинакс':
@@ -155,7 +144,6 @@ class GUI(tk.Frame):
             plt.show()
         except:
             messagebox.showerror('Ошибка','Были некорректно  введены значения.')
-        #self.exit()
 
     def fem_cal(self):
         #размерность неправильная 
@@ -177,12 +165,6 @@ class GUI(tk.Frame):
         fig = plt.figure()
         plt.plot(x, T)
         plt.show()
-       
-        #self.exit()
-        
-
-    def check(self):
-        pass
 
 if __name__ == "__main__":
     root=tk.Tk()
